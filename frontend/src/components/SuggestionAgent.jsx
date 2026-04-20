@@ -40,15 +40,15 @@ const SuggestionAgent = () => {
 
     try {
       const { data } = await api.post('/suggestions', { query, limit: 6 });
-      const { suggestions: products } = data.data;
+      const { suggestions: products, message } = data.data;
 
       const agentMsg = {
         id: Date.now() + 1,
         role: 'agent',
-        text:
-          products.length > 0
-            ? `I found ${products.length} product${products.length > 1 ? 's' : ''} matching "${query}":`
-            : `I couldn't find exact matches for "${query}", but here are some popular options:`,
+        text: message || (products.length > 0
+          ? `I found ${products.length} product${products.length > 1 ? 's' : ''} matching "${query}":`
+          : `I couldn't find exact matches for "${query}", but here are some popular options:`
+        ),
       };
       setMessages((prev) => [...prev, agentMsg]);
       setSuggestions(products || []);
