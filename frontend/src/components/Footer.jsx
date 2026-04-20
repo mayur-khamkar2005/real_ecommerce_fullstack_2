@@ -70,7 +70,7 @@ const Footer = () => {
             <h3 style={{ color: 'var(--text-main)', borderColor: 'var(--border)' }} className="text-xs font-semibold uppercase tracking-widest mb-4 border-b pb-2">
               Colophon
             </h3>
-            <p className="text-sm leading-relaxed mb-4">MERN stack · JWT cookies · MongoDB</p>
+            <p className="text-sm leading-relaxed mb-4">Delivering quality products with seamless shopping experience.</p>
             <div className="flex gap-2">
               <span style={{ borderColor: 'var(--border)', color: 'var(--text-main)' }} className="w-9 h-9 border flex items-center justify-center text-[10px] font-mono">
                 gh

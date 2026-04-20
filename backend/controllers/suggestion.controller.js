@@ -3,18 +3,35 @@ const catchAsync = require('../utils/catchAsync');
 
 /**
  * POST /api/suggestions
- * Chat-based product suggestion endpoint.
+ * Smart conversational shopping assistant endpoint.
+ * 
+ * Features:
+ * - Multi-language support (English, Hindi, Hinglish)
+ * - Intent detection (greeting, smalltalk, suggestion, unknown)
+ * - Dynamic response generation using word memory system
+ * - Thinking animation support
  *
  * Body: { query: string, limit?: number }
  *
- * Response: { success: true, data: { suggestions, total, query, aiEnhanced } }
- *
- * AI is optional — always falls back to DB-driven results.
+ * Response: { success: true, data: { suggestions, message, metadata } }
  */
 exports.getSuggestions = catchAsync(async (req, res, next) => {
+  console.log('=== API HIT: POST /api/suggestions ===');
+  console.log('Request body:', req.body);
+  
   const { query, limit } = req.body;
 
-  const result = await suggestionService.getSuggestions(query, limit);
+  console.log('Query:', query);
+  console.log('Limit:', limit);
+
+  // Use conversational AI endpoint
+  const result = await suggestionService.getConversationalSuggestions(query, limit);
+
+  console.log('Response:', {
+    suggestionCount: result.suggestions?.length || 0,
+    message: result.message,
+    metadata: result.metadata
+  });
 
   res.status(200).json({
     success: true,
