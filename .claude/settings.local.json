@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const API_BASE = 'http://localhost:5000/api'; const BACKEND_ORIGIN = API_BASE.replace\\(/\\\\/api\\\\/?$/, ''\\).replace\\(/\\\\/$/, ''\\); console.log\\('Origin:', BACKEND_ORIGIN\\); console.log\\('Result:', BACKEND_ORIGIN + '/uploads/test.jpg'\\);\")"
+    ]
+  }
+}
