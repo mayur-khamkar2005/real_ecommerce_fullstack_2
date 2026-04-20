@@ -44,8 +44,12 @@ const Navbar = () => {
           onClick={() => setMobileMenuOpen(false)}
         >
           <ShoppingBag size={22} style={{ color: 'var(--secondary)' }} />
-          <span className="font-black text-lg leading-none">
-            Shop<span style={{ color: 'var(--secondary)' }}>Brand</span>
+          <span className="text-xl font-extrabold tracking-wide">
+            <span className="text-white">M</span>
+            <span className="mx-1 text-gray-400">–</span>
+            <span style={{ color: 'var(--secondary)' }} className="italic">
+              Store
+            </span>
           </span>
         </Link>
 
