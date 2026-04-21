@@ -12,38 +12,52 @@ function hoursLeft(nextPlayableAt) {
   return Math.max(0, nextPlayableAt.getTime() - Date.now());
 }
 
+// ✅ CLEAN STRUCTURE
 const SPIN_OUTCOMES = [
-  { label: '10% OFF', discount: 10, probability: 0.3 },
-  { label: '15% OFF', discount: 15, probability: 0.2 },
-  { label: '20% OFF', discount: 20, probability: 0.1 },
-  { label: 'NO_REWARD', discount: 0, probability: 0.4 },
+  { value: "10", label: '10% OFF', discount: 10, probability: 0.3 },
+  { value: "15", label: '15% OFF', discount: 15, probability: 0.2 },
+  { value: "20", label: '20% OFF', discount: 20, probability: 0.1 },
+  { value: "NO_REWARD", label: 'Better Luck', discount: 0, probability: 0.4 },
 ];
 
+// ✅ FIXED: value bhi return karega
 function pickSpinOutcome() {
   const roll = Math.random();
   let cumulative = 0;
+
   for (const item of SPIN_OUTCOMES) {
     cumulative += item.probability;
+
     if (roll <= cumulative) {
-      if (item.label === 'NO_REWARD') {
-        const text = Math.random() < 0.5 ? 'Better Luck Next Time' : 'No Reward';
-        return { label: text, discount: 0, rewardGiven: false };
+      if (item.value === 'NO_REWARD') {
+        return {
+          value: "NO_REWARD",
+          label: "Better Luck",
+          discount: 0,
+          rewardGiven: false,
+        };
       }
-      return { label: item.label, discount: item.discount, rewardGiven: true };
+
+      return {
+        value: item.value,
+        label: item.label,
+        discount: item.discount,
+        rewardGiven: true,
+      };
     }
   }
-  return { label: 'No Reward', discount: 0, rewardGiven: false };
-}
 
-function extractDiscountFromResult(resultText) {
-  const match = String(resultText || '').match(/(\d+)\s*%/);
-  if (!match) return 0;
-  const value = Number(match[1]);
-  return [10, 15, 20].includes(value) ? value : 0;
+  return {
+    value: "NO_REWARD",
+    label: "Better Luck",
+    discount: 0,
+    rewardGiven: false,
+  };
 }
 
 exports.getStatus = async (userId) => {
   const progress = await GameProgress.findOne({ userId });
+
   if (!progress || !progress.lastPlayedAt) {
     return {
       canSpin: true,
@@ -57,6 +71,7 @@ exports.getStatus = async (userId) => {
 
   const nextPlayableAt = new Date(progress.lastPlayedAt.getTime() + GAME_COOLDOWN_MS);
   const msRemaining = hoursLeft(nextPlayableAt);
+
   return {
     canSpin: msRemaining === 0,
     nextSpinIn: msRemaining,
@@ -69,6 +84,7 @@ exports.getStatus = async (userId) => {
 
 exports.play = async (userId) => {
   const status = await exports.getStatus(userId);
+
   if (!status.canSpin) {
     throw new AppError('You can spin only once every 24 hours', 429);
   }
@@ -80,7 +96,7 @@ exports.play = async (userId) => {
     {
       $set: {
         lastPlayedAt: getNow(),
-        lastResult: outcome.label,
+        lastResult: outcome.value, // ✅ MAIN FIX
         rewardGiven: outcome.rewardGiven,
         rewardClaimed: !outcome.rewardGiven,
       },
@@ -89,7 +105,7 @@ exports.play = async (userId) => {
   );
 
   return {
-    result: progress.lastResult,
+    result: progress.lastResult, // returns "10", "15", etc.
     rewardGiven: progress.rewardGiven,
     canClaim: progress.rewardGiven && !progress.rewardClaimed,
     nextPlayableAt: new Date(progress.lastPlayedAt.getTime() + GAME_COOLDOWN_MS),
@@ -99,16 +115,26 @@ exports.play = async (userId) => {
 
 exports.claimReward = async (userId) => {
   const progress = await GameProgress.findOne({ userId });
+
   if (!progress || !progress.lastPlayedAt) {
     throw new AppError('Spin the wheel first', 400);
   }
-  if (!progress.rewardGiven) throw new AppError('No reward earned this round', 400);
-  if (progress.rewardClaimed) throw new AppError('Reward already claimed', 400);
 
-  const discount = extractDiscountFromResult(progress.lastResult);
+  if (!progress.rewardGiven) {
+    throw new AppError('No reward earned this round', 400);
+  }
+
+  if (progress.rewardClaimed) {
+    throw new AppError('Reward already claimed', 400);
+  }
+
+  // ✅ SIMPLE & CLEAN (no regex)
+  const discount = Number(progress.lastResult);
+
   if (![10, 15, 20].includes(discount)) {
     throw new AppError('Invalid reward result for claim', 400);
   }
+
   const coupon = await couponService.createCouponForUser(userId, discount);
 
   progress.rewardClaimed = true;
@@ -120,4 +146,3 @@ exports.claimReward = async (userId) => {
     couponId: coupon._id,
   };
 };
-

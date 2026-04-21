@@ -7,6 +7,11 @@ const Wallet = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
+  const usedCoupons = coupons.filter(c => c.isUsed);
+  const freeCouponsCount = coupons.filter(
+    c => c.code.startsWith('FREE-') && !c.isUsed
+  ).length;
+
   const fetchCoupons = async () => {
     try {
       const { data } = await api.get('/coupons/my');
@@ -51,11 +56,14 @@ const Wallet = () => {
             type="button"
             className="btn-primary px-4 py-2 text-xs uppercase tracking-wider"
             onClick={generateFreeCoupon}
-            disabled={creating}
+            disabled={creating || freeCouponsCount >= 3} // ✅ FIX
           >
-            {creating ? 'Creating…' : 'Get Free Test Coupon'}
+            {creating
+              ? 'Creating…'
+              : freeCouponsCount >= 3
+                ? 'Limit Reached (3/3)' // ✅ FIX
+                : 'Get First 3 coupons For Free'}
           </button>
-          <span className="text-xs text-textMuted uppercase tracking-wider">Testing helper</span>
         </div>
 
         <div className="mb-6 border border-border p-4 bg-backgroundElevated">
@@ -74,18 +82,16 @@ const Wallet = () => {
           )}
         </div>
 
-        {coupons.length === 0 ? (
-          <div className="text-sm text-textMuted border border-border p-4">No coupons yet. Play the game to win.</div>
-        ) : (
+        {usedCoupons.length > 0 && (
           <div className="space-y-3">
-            {coupons.map((coupon) => (
+            {usedCoupons.map((coupon) => (
               <div key={coupon._id} className="border border-border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <div className="font-mono font-bold text-secondary">{coupon.code}</div>
                   <div className="text-sm text-textMain">Discount: {coupon.discount}%</div>
                 </div>
-                <div className={`text-xs uppercase tracking-wider font-bold ${coupon.isUsed ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {coupon.isUsed ? `Used${coupon.usedAt ? ` • ${new Date(coupon.usedAt).toLocaleString()}` : ''}` : 'Active'}
+                <div className="text-xs uppercase tracking-wider font-bold text-red-400">
+                  Used{coupon.usedAt ? ` • ${new Date(coupon.usedAt).toLocaleString()}` : ''}
                 </div>
               </div>
             ))}

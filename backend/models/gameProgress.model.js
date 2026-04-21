@@ -15,7 +15,7 @@ const gameProgressSchema = new mongoose.Schema(
     },
     lastResult: {
       type: String,
-      enum: ['win', 'lose', null],
+      enum: ['10', '15', '20', 'NO_REWARD'], // ✅ FIXED
       default: null,
     },
     rewardGiven: {
@@ -31,4 +31,3 @@ const gameProgressSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('GameProgress', gameProgressSchema);
-
