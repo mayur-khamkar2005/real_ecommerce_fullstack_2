@@ -8,42 +8,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dark theme (default)
-        background: '#0f0f0f',
-        backgroundElevated: '#121212',
-        surface: '#1a1a1a',
-        border: '#2a2a2a',
-        textMain: '#e5e5e5',
-        textDark: '#e5e5e5',
-        textMuted: '#a3a3a3',
-        primary: '#121212',
-        primaryDark: '#0a0a0a',
-        secondary: '#3b82f6',
-        secondaryHover: '#2563eb',
-        // Light theme
-        light: {
-          bg: '#f5f5f5',
-          bgElevated: '#ffffff',
-          surface: '#ffffff',
-          border: '#e0e0e0',
-          textMain: '#1a1a1a',
-          textDark: '#1a1a1a',
-          textMuted: '#737373',
-          primary: '#1e40af',
-          primaryDark: '#1e3a8a',
-        },
-        // Dark theme (explicit)
-        dark: {
-          bg: '#0f0f0f',
-          bgElevated: '#121212',
-          surface: '#1a1a1a',
-          border: '#2a2a2a',
-          textMain: '#e5e5e5',
-          textDark: '#e5e5e5',
-          textMuted: '#a3a3a3',
-          primary: '#121212',
-          primaryDark: '#0a0a0a',
-        },
+        // Theme-aware tokens (read from CSS variables)
+        background: 'var(--bg)',
+        backgroundElevated: 'var(--bg-elevated)',
+        surface: 'var(--surface)',
+        border: 'var(--border)',
+        textMain: 'var(--text-main)',
+        textDark: 'var(--text-dark)',
+        textMuted: 'var(--text-muted)',
+        primary: 'var(--primary)',
+        primaryDark: 'var(--primary-dark)',
+        secondary: 'var(--secondary)',
+        secondaryHover: 'var(--secondary-hover)',
       },
       borderRadius: {
         none: '0',

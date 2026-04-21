@@ -2,7 +2,6 @@ import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 
 const Register = () => {
@@ -12,7 +11,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
-  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -45,7 +43,7 @@ const Register = () => {
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Create your free account</p>
         </div>
 
-        <div className="p-8 shadow-lg" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderWidth: '1px' }}>
+        <div className="card p-8" style={{ backgroundColor: 'var(--surface)' }}>
           <h2 className="text-xl font-black mb-6" style={{ color: 'var(--text-dark)' }}>Get started</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -107,7 +105,7 @@ const Register = () => {
                       style={{
                         backgroundColor: password.length >= level * 4
                           ? level === 3 ? '#22c55e' : level === 2 ? '#eab308' : '#f97316'
-                          : theme === 'dark' ? '#374151' : '#e5e7eb',
+                          : '#374151',
                         borderRadius: '2px'
                       }}
                     />

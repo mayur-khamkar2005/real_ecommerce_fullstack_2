@@ -20,13 +20,13 @@ const ProductCard = ({ product }) => {
       <Link
         to={`/product/${product._id}`}
         style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
-        className="block h-56 p-5 relative overflow-hidden flex items-center justify-center border-b"
+        className="h-56 p-5 relative overflow-hidden flex items-center justify-center border-b"
       >
         {/* Skeleton */}
         {!imageLoaded && (
           <div
             style={{ backgroundColor: 'var(--border)' }}
-            className="absolute inset-0 animate-pulse"
+            className="absolute inset-0 animate-pulse pointer-events-none"
           />
         )}
 
@@ -38,6 +38,7 @@ const ProductCard = ({ product }) => {
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = PLACEHOLDER_IMG;
+            setImageLoaded(true);
           }}
           className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${
             !imageLoaded ? 'opacity-0' : 'opacity-100'

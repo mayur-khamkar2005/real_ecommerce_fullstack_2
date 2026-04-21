@@ -1,55 +1,95 @@
 const Product = require('../models/product.model');
-const AppError = require('../utils/AppError');
+const { processConversation, detectIntent, detectLanguage } = require('../utils/assistant');
+const { askAI } = require('../utils/ai');
 
-/**
- * Parse user query into searchable tokens.
- * Extracts keywords, categories, price hints.
- */
+// ───────────────────────────────────────────── 
+// QUERY PARSING 
+// ─────────────────────────────────────────────
+
+const PRICE_PATTERNS = [
+  /(?:under|below|less\s+than|upto|up\s+to|max|maximum)\s*\$?\s*(\d+(?:,\d{3})*(?:\.\d+)?)/i,
+  /(?:\$|rs\.?|inr\.?)\s*(\d+(?:,\d{3})*(?:\.\d+)?)/i,
+];
+
+function extractMaxPrice(query) {
+  for (const pattern of PRICE_PATTERNS) {
+    const match = query.match(pattern);
+    if (match) return parseFloat(match[1].replace(/,/g, ''));
+  }
+  return null;
+}
+
+const CATEGORY_MAP = {
+  // Electronics
+  laptop: 'Electronics', laptops: 'Electronics', phone: 'Electronics', phones: 'Electronics',
+  mobile: 'Electronics', mobiles: 'Electronics', tablet: 'Electronics', tablets: 'Electronics',
+  computer: 'Electronics', computers: 'Electronics', camera: 'Electronics', cameras: 'Electronics',
+  tv: 'Electronics', television: 'Electronics', speaker: 'Electronics', speakers: 'Electronics',
+  headphone: 'Electronics', headphones: 'Electronics', earphone: 'Electronics', earphones: 'Electronics',
+  earbuds: 'Electronics', monitor: 'Electronics', monitors: 'Electronics',
+  keyboard: 'Electronics', mouse: 'Electronics', electronics: 'Electronics',
+  // Fashion
+  fashion: 'Fashion', clothing: 'Fashion', clothes: 'Fashion',
+  shirt: 'Fashion', shirts: 'Fashion', tshirt: 'Fashion', jeans: 'Fashion',
+  pants: 'Fashion', dress: 'Fashion', dresses: 'Fashion', jacket: 'Fashion', jackets: 'Fashion',
+  // Footwear
+  shoe: 'Footwear', shoes: 'Footwear', sneaker: 'Footwear', sneakers: 'Footwear',
+  boot: 'Footwear', boots: 'Footwear', footwear: 'Footwear', sandals: 'Footwear',
+  // Accessories
+  accessories: 'Accessories', watch: 'Accessories', watches: 'Accessories',
+  bag: 'Accessories', bags: 'Accessories', sunglasses: 'Accessories',
+  // Gaming
+  gaming: 'Gaming', game: 'Gaming', games: 'Gaming', console: 'Gaming',
+  playstation: 'Gaming', xbox: 'Gaming', nintendo: 'Gaming', controller: 'Gaming',
+  // Home & Kitchen
+  home: 'Home & Kitchen', kitchen: 'Home & Kitchen', furniture: 'Home & Kitchen',
+  appliance: 'Home & Kitchen', appliances: 'Home & Kitchen', blender: 'Home & Kitchen',
+  microwave: 'Home & Kitchen', cooker: 'Home & Kitchen',
+  // Books
+  book: 'Books', books: 'Books', novel: 'Books', novels: 'Books',
+  // Sports
+  sports: 'Sports', sport: 'Sports', fitness: 'Sports', gym: 'Sports',
+  exercise: 'Sports', yoga: 'Sports',
+  // Beauty
+  beauty: 'Beauty', makeup: 'Beauty', skincare: 'Beauty', perfume: 'Beauty', cosmetics: 'Beauty',
+};
+
+// Stop words to exclude from keyword search
+const STOP_WORDS = new Set([
+  'i', 'me', 'a', 'an', 'the', 'and', 'or', 'for', 'to', 'of', 'in', 'on', 'at',
+  'want', 'need', 'looking', 'find', 'show', 'suggest', 'get', 'buy', 'give',
+  'some', 'any', 'good', 'best', 'cheap', 'affordable', 'nice',
+]);
+
 function parseQuery(query) {
   const raw = (query || '').toLowerCase().trim();
-  const tokens = raw.split(/\s+/).filter(Boolean);
+  const maxPrice = extractMaxPrice(raw);
 
-  // Category keywords that map to exact categories
-  const categoryMap = {
-    electronics: 'Electronics',
-    fashion: 'Fashion',
-    gaming: 'Gaming',
-    'home & kitchen': 'Home & Kitchen',
-    'home and kitchen': 'Home & Kitchen',
-    'home': 'Home & Kitchen',
-    kitchen: 'Home & Kitchen',
-    books: 'Books',
-    sports: 'Sports',
-    beauty: 'Beauty',
-    accessories: 'Accessories',
-    footwear: 'Footwear',
-    gadgets: 'Gadgets',
-  };
+  const cleaned = raw
+    .replace(/(?:under|below|less\s+than|upto|up\s+to|max|maximum)\s*\$?\s*\d+(?:,\d{3})*(?:\.\d+)?/gi, '')
+    .replace(/(?:\$|rs\.?|inr\.?)\s*\d+(?:,\d{3})*(?:\.\d+)?/gi, '')
+    .trim();
 
   const categories = [];
   const keywords = [];
 
-  for (const token of tokens) {
-    const mapped = categoryMap[token];
-    if (mapped && !categories.includes(mapped)) {
-      categories.push(mapped);
-    } else {
+  for (const token of cleaned.split(/\s+/).filter(Boolean)) {
+    const mapped = CATEGORY_MAP[token];
+    if (mapped) {
+      if (!categories.includes(mapped)) categories.push(mapped);
+    } else if (token.length > 2 && !STOP_WORDS.has(token)) {
       keywords.push(token);
     }
   }
 
-  return { categories, keywords, raw };
+  return { categories, keywords, maxPrice, raw };
 }
 
-/**
- * Build MongoDB filter from parsed query.
- */
-function buildFilter({ categories, keywords }) {
-  const filter = {};
+function buildFilter({ categories, keywords, maxPrice }) {
+  const filter = { stock: { $gt: 0 } };
 
-  if (categories.length > 0) {
-    filter.category = { $in: categories };
-  }
+  if (categories.length > 0) filter.category = { $in: categories };
+  if (maxPrice !== null) filter.price = { $lte: maxPrice };
 
   if (keywords.length > 0) {
     filter.$or = [
@@ -62,133 +102,178 @@ function buildFilter({ categories, keywords }) {
   return filter;
 }
 
-/**
- * Score products based on relevance to query.
- * Higher score = more relevant.
- */
-function scoreProducts(products, query) {
-  const queryLower = query.toLowerCase();
-  const queryTerms = queryLower.split(/\s+/);
+// ─────────────────────────────────────────────
+// SCORING
+// ─────────────────────────────────────────────
+
+function scoreProducts(products, { raw, keywords, maxPrice, categories }) {
+  const queryTerms = keywords.length > 0
+    ? keywords
+    : raw.split(/\s+/).filter(t => t.length > 2 && !STOP_WORDS.has(t));
 
   return products.map((product) => {
     let score = 0;
-    const nameLower = (product.name || '').toLowerCase();
-    const descLower = (product.description || '').toLowerCase();
-    const catLower = (product.category || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    const desc = (product.description || '').toLowerCase();
+    const cat = (product.category || '').toLowerCase();
 
-    // Exact name match gets highest score
-    if (nameLower.includes(queryLower)) score += 50;
-    // Name starts with query
-    if (nameLower.startsWith(queryLower)) score += 25;
-    // Category match
-    if (catLower.includes(queryLower)) score += 20;
-    // Description match
-    if (descLower.includes(queryLower)) score += 10;
-    // Token matches in name/description
+    if (name.includes(raw)) score += 50;
+
     for (const term of queryTerms) {
-      if (nameLower.includes(term)) score += 5;
-      if (descLower.includes(term)) score += 2;
+      if (name.startsWith(term)) score += 30;
+      else if (name.includes(term)) score += 20;
+      if (desc.includes(term)) score += 10;
+      if (cat.includes(term)) score += 15;
     }
-    // Boost by rating and stock availability
-    if (product.rating > 0) score += product.rating;
-    if (product.stock > 0) score += 1;
 
-    return { ...product.toObject(), _score: score };
+    if (categories.length > 0 && categories.includes(product.category)) score += 25;
+
+    if (maxPrice !== null && product.price <= maxPrice) {
+      const ratio = product.price / maxPrice;
+      score += ratio >= 0.7 ? 15 : ratio >= 0.5 ? 10 : 0;
+    }
+
+    score += (product.rating || 0) * 2;
+    score += Math.min(product.numReviews || 0, 10);
+
+    return { ...product, _score: score };
   });
 }
 
-/**
- * Get suggestions from database based on user query.
- * DB-driven: always returns results even without AI.
- *
- * @param {string} query - Natural language search query
- * @param {number} limit - Max suggestions to return (default 6)
- * @returns {Promise<Array>} Sorted, scored product suggestions
- */
-exports.getSuggestions = async (query, limit = 6) => {
-  if (!query || query.trim().length < 2) {
-    // Return popular products as default
-    const popular = await Product.find({ stock: { $gt: 0 } })
-      .sort('-rating -numReviews')
-      .limit(limit)
-      .lean();
-    return {
-      suggestions: popular.map((p) => ({ ...p, _score: 0, _source: 'popular' })),
-      total: popular.length,
-      query: '',
-      aiEnhanced: false,
-    };
-  }
+// ─────────────────────────────────────────────
+// DB SEARCH (shared by both exports)
+// ─────────────────────────────────────────────
 
+async function searchProducts(query, limit) {
   const parsed = parseQuery(query);
   const filter = buildFilter(parsed);
 
-  let products = await Product.find({ ...filter, stock: { $gt: 0 } })
+  let products = await Product.find(filter)
     .sort('-rating -numReviews')
     .limit(20)
     .lean();
 
+  // Fallback 1: keyword-only search
   if (products.length === 0 && parsed.keywords.length > 0) {
-    // Fallback: search just by keywords if category didn't match
-    const fallbackFilter = {
+    const fallback = {
       $or: [
         { name: { $regex: parsed.keywords.join('|'), $options: 'i' } },
         { description: { $regex: parsed.keywords.join('|'), $options: 'i' } },
       ],
       stock: { $gt: 0 },
+      ...(parsed.maxPrice !== null && { price: { $lte: parsed.maxPrice } }),
     };
-    products = await Product.find(fallbackFilter)
-      .sort('-rating')
-      .limit(20)
-      .lean();
+    products = await Product.find(fallback).sort('-rating').limit(20).lean();
   }
 
-  // Score and sort
-  const scored = scoreProducts(products, query);
+  // Fallback 2: popular products
+  if (products.length === 0) {
+    return {
+      products: await Product.find({ stock: { $gt: 0 } })
+        .sort('-rating -numReviews')
+        .limit(limit)
+        .lean(),
+      parsed,
+      usedFallback: true,
+    };
+  }
+
+  const scored = scoreProducts(products, parsed);
   scored.sort((a, b) => b._score - a._score);
-  const suggestions = scored.slice(0, limit).map((p) => ({ ...p, _source: 'database' }));
+
+  return { products: scored.slice(0, limit), parsed, usedFallback: false };
+}
+
+async function getPopularProducts(limit) {
+  return Product.find({ stock: { $gt: 0 } })
+    .sort('-rating -numReviews')
+    .limit(limit)
+    .lean();
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC: CONVERSATIONAL (main endpoint)
+// ─────────────────────────────────────────────
+
+/**
+ * Smart conversational assistant with intent routing.
+ * Products are ONLY returned for suggestion intent.
+ */
+exports.getConversationalSuggestions = async (query = '', limit = 6) => {
+  const language = detectLanguage(query);
+  const intent = detectIntent(query, language);
+
+  // STRICT RULE: if intent !== "suggestion" → products must be []
+  if (intent !== 'suggestion') {
+    // Chat intent → OpenRouter AI (text only)
+    if (intent === 'chat') {
+      const message = await askAI(query);
+      return {
+        suggestions: [],
+        message,
+        metadata: { intent, language, productCount: 0 },
+      };
+    }
+
+    // Greeting/Fallback → local text (no products, no AI)
+    const conversation = processConversation(query, []);
+    return {
+      suggestions: [],
+      message: conversation.message,
+      metadata: { ...conversation.metadata, intent, language },
+    };
+  }
+
+  // Empty/very short query → return popular products
+  if (!query || query.trim().length < 2) {
+    const popular = await getPopularProducts(limit);
+    const conversation = processConversation(query, popular);
+    return {
+      suggestions: popular,
+      message: conversation.message,
+      metadata: conversation.metadata,
+    };
+  }
+
+  // Full product search
+  const { products, usedFallback } = await searchProducts(query, limit);
+  const conversation = processConversation(query, products);
 
   return {
-    suggestions,
-    total: suggestions.length,
-    query,
-    aiEnhanced: false,
+    suggestions: products,
+    message: conversation.message,
+    metadata: { ...conversation.metadata, usedFallback },
   };
 };
 
-/**
- * Get personalized suggestions based on user's order/rating history.
- * Requires userId - falls back to general suggestions if not available.
- *
- * @param {string} userId
- * @param {number} limit
- */
+// ─────────────────────────────────────────────
+// PUBLIC: PERSONALIZED (authenticated users)
+// ─────────────────────────────────────────────
+
 exports.getPersonalizedSuggestions = async (userId, limit = 6) => {
-  if (!userId) return exports.getSuggestions('', limit);
+  if (!userId) {
+    const popular = await getPopularProducts(limit);
+    return { suggestions: popular, message: "Here are some popular products you might like:" };
+  }
 
   try {
-    // Get user's purchased/rated categories
     const Order = require('../models/order.model');
-    const Review = require('../models/review.model');
 
     const orders = await Order.find({ user: userId, status: 'delivered' })
       .sort('-createdAt')
       .limit(50)
       .lean();
 
-    const reviews = await Review.find({ user: userId }).lean();
+    const purchasedIds = orders
+      .flatMap((o) => (o.items || []).map((item) => item.product?.toString()))
+      .filter(Boolean);
 
-    // Extract preferred categories
-    const purchasedProducts = orders.flatMap((o) =>
-      (o.items || []).map((item) => item.product?.toString()).filter(Boolean)
-    );
-
-    if (purchasedProducts.length === 0) {
-      return exports.getSuggestions('', limit);
+    if (purchasedIds.length === 0) {
+      const popular = await getPopularProducts(limit);
+      return { suggestions: popular, message: "Here are some popular products for you:" };
     }
 
-    // Get categories from purchased products
-    const purchased = await Product.find({ _id: { $in: purchasedProducts } }).lean();
+    const purchased = await Product.find({ _id: { $in: purchasedIds } }).lean();
     const categoryCounts = {};
     purchased.forEach((p) => {
       categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
@@ -199,30 +284,28 @@ exports.getPersonalizedSuggestions = async (userId, limit = 6) => {
       .slice(0, 3)
       .map(([cat]) => cat);
 
-    // Get suggestions from top categories
-    const filter = { category: { $in: topCategories }, stock: { $gt: 0 } };
-    const excludeIds = [...new Set(purchasedProducts)].slice(0, 10);
+    const filter = {
+      category: { $in: topCategories },
+      stock: { $gt: 0 },
+      _id: { $nin: [...new Set(purchasedIds)].slice(0, 20) },
+    };
 
-    if (excludeIds.length > 0) {
-      filter._id = { $nin: excludeIds };
-    }
-
-    const products = await Product.find(filter)
-      .sort('-rating')
-      .limit(limit * 2)
-      .lean();
-
-    const scored = scoreProducts(products, topCategories.join(' '));
+    const products = await Product.find(filter).sort('-rating').limit(limit * 2).lean();
+    const scored = scoreProducts(products, {
+      raw: topCategories.join(' '),
+      keywords: topCategories,
+      maxPrice: null,
+      categories: topCategories,
+    });
     scored.sort((a, b) => b._score - a._score);
 
     return {
-      suggestions: scored.slice(0, limit).map((p) => ({ ...p, _source: 'personalized' })),
-      total: scored.length,
-      query: topCategories.join(', '),
-      aiEnhanced: false,
+      suggestions: scored.slice(0, limit),
+      message: "Based on your purchase history, here are some recommendations:",
     };
-  } catch {
-    // Any error → fall back to general
-    return exports.getSuggestions('', limit);
+  } catch (err) {
+    console.error('[Service] getPersonalizedSuggestions error:', err.message);
+    const popular = await getPopularProducts(limit);
+    return { suggestions: popular, message: "Here are some popular products for you:" };
   }
 };

@@ -2,8 +2,8 @@ const orderService = require('../services/order.service');
 const catchAsync = require('../utils/catchAsync');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
-  const { shippingAddress } = req.body;
-  const order = await orderService.createOrder(req.user.id, shippingAddress);
+  const { shippingAddress, couponCode } = req.body;
+  const order = await orderService.createOrder(req.user.id, shippingAddress, couponCode);
   res.status(201).json({ success: true, data: order });
 });
 

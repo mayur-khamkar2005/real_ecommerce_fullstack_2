@@ -1,16 +1,14 @@
 import { useContext, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, Search, LogOut, User, Heart, Menu, X, ShoppingBag, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Search, LogOut, User, Heart, Menu, X, ShoppingBag, Gift } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { useTheme } from '../context/ThemeContext';
 
 const CATEGORIES = ['Electronics', 'Fashion', 'Gaming', 'Home & Kitchen', 'Books', 'Sports', 'Beauty', 'Gadgets'];
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
   const { cartCount } = useContext(CartContext);
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -34,7 +32,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav style={{ backgroundColor: 'var(--primary)', color: 'var(--text-main)' }} className="sticky top-0 z-50 shadow-md">
+    <nav
+      style={{
+        backgroundColor: 'var(--primary)',
+        color: 'var(--text-main)',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+      className="sticky top-0 z-50"
+    >
       {/* ── Main Row ── */}
       <div className="max-w-[1400px] mx-auto px-4 h-14 flex items-center gap-3">
         {/* Logo */}
@@ -104,6 +110,12 @@ const Navbar = () => {
               <Link to="/wishlist" style={{ color: 'var(--text-main)' }} className="p-2 hover:bg-white/10 rounded-md" title="Wishlist">
                 <Heart size={20} strokeWidth={1.75} />
               </Link>
+              <Link to="/games" style={{ color: 'var(--text-main)' }} className="flex items-center gap-1 px-2 py-1 hover:bg-white/10 rounded-md text-xs uppercase tracking-wider">
+                <Gift size={14} /> Play & Win
+              </Link>
+              <Link to="/wallet" style={{ color: 'var(--text-main)' }} className="flex items-center gap-1 px-2 py-1 hover:bg-white/10 rounded-md text-xs uppercase tracking-wider">
+                Wallet
+              </Link>
               {user.role === 'admin' && (
                 <Link to="/admin" style={{ color: 'var(--secondary)' }} className="px-2 py-1 font-bold text-sm hover:bg-white/10 rounded-md uppercase tracking-wider">
                   Admin
@@ -128,15 +140,6 @@ const Navbar = () => {
               >
                 <LogOut size={20} strokeWidth={1.75} />
               </button>
-              <button
-                onClick={toggleTheme}
-                style={{ color: 'var(--text-main)' }}
-                className="p-2 hover:bg-white/10 rounded-md"
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
-              </button>
             </>
           ) : (
             <>
@@ -147,29 +150,12 @@ const Navbar = () => {
                   <span className="font-bold">Account</span>
                 </div>
               </Link>
-              <button
-                onClick={toggleTheme}
-                style={{ color: 'var(--text-main)' }}
-                className="p-2 hover:bg-white/10 rounded-md"
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
-              </button>
             </>
           )}
         </div>
 
         {/* Mobile: Cart icon + hamburger */}
         <div className="flex md:hidden items-center gap-1">
-          <button
-            onClick={toggleTheme}
-            style={{ color: 'var(--text-main)' }}
-            className="p-2 hover:bg-white/10 rounded-md"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
           {user && (
             <Link to="/cart" className="relative p-2" style={{ color: 'var(--text-main)' }}>
               <ShoppingCart size={22} strokeWidth={1.75} />
@@ -224,6 +210,8 @@ const Navbar = () => {
               <Link to="/profile" style={{ color: 'var(--text-main)' }} className="hover:text-secondary transition-colors" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
               <Link to="/my-orders" style={{ color: 'var(--text-main)' }} className="hover:text-secondary transition-colors" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
               <Link to="/wishlist" style={{ color: 'var(--text-main)' }} className="hover:text-secondary transition-colors" onClick={() => setMobileMenuOpen(false)}>Wishlist</Link>
+              <Link to="/games" style={{ color: 'var(--text-main)' }} className="hover:text-secondary transition-colors" onClick={() => setMobileMenuOpen(false)}>Play & Win</Link>
+              <Link to="/wallet" style={{ color: 'var(--text-main)' }} className="hover:text-secondary transition-colors" onClick={() => setMobileMenuOpen(false)}>Wallet</Link>
               {user.role === 'admin' && (
                 <Link to="/admin" style={{ color: 'var(--secondary)' }} className="font-bold hover:opacity-80" onClick={() => setMobileMenuOpen(false)}>Admin Panel</Link>
               )}

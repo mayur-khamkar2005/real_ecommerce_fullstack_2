@@ -1,9 +1,10 @@
 const Order = require('../models/order.model');
 const Cart = require('../models/cart.model');
 const Product = require('../models/product.model');
+const couponService = require('./coupon.service');
 const AppError = require('../utils/AppError');
 
-exports.createOrder = async (userId, shippingAddress) => {
+exports.createOrder = async (userId, shippingAddress, couponCode = '') => {
   const cart = await Cart.findOne({ user: userId }).populate('items.product');
   
   if (!cart || cart.items.length === 0) {
@@ -39,11 +40,24 @@ exports.createOrder = async (userId, shippingAddress) => {
     throw new AppError('Your cart is empty or invalid.', 400);
   }
 
+  let discountAmount = 0;
+  let appliedCouponCode = null;
+  let finalTotal = totalPrice;
+
+  if (couponCode && couponCode.toString().trim()) {
+    const applied = await couponService.applyCoupon(userId, couponCode, totalPrice);
+    discountAmount = applied.discountAmount;
+    finalTotal = applied.finalTotal;
+    appliedCouponCode = applied.code;
+  }
+
   const order = await Order.create({
     user: userId,
     orderItems,
     shippingAddress,
-    totalPrice,
+    totalPrice: finalTotal,
+    discountAmount,
+    couponCode: appliedCouponCode,
     paymentMethod: 'Cash on Delivery',
   });
 
@@ -52,6 +66,10 @@ exports.createOrder = async (userId, shippingAddress) => {
     await Product.findByIdAndUpdate(item.product, {
       $inc: { stock: -item.quantity, purchaseCount: 1 }
     });
+  }
+
+  if (appliedCouponCode) {
+    await couponService.consumeCoupon(userId, appliedCouponCode);
   }
 
   // Clear cart
