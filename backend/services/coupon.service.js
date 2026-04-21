@@ -30,9 +30,22 @@ exports.createCouponForUser = async (userId, discount) => {
 };
 
 exports.createFreeTestCouponForUser = async (userId) => {
+  // ✅ FIX: only ACTIVE FREE coupons count karo
+  const existingFreeCoupons = await Coupon.countDocuments({
+    userId,
+    code: { $regex: /^FREE-/ },
+    isUsed: false, // 🔥 MAIN FIX
+  });
+
+  if (existingFreeCoupons >= 3) {
+    throw new AppError('You can only claim 3 free coupons', 400);
+  }
+
   const discounts = [10, 15, 20];
   const discount = discounts[Math.floor(Math.random() * discounts.length)];
+
   const code = `FREE-${await generateUniqueCode()}`;
+
   return Coupon.create({
     userId,
     discount,
