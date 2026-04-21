@@ -19,6 +19,8 @@ const Checkout = () => {
 
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -49,17 +51,23 @@ const Checkout = () => {
     const price = item.product?.price ?? 0;
     return acc + price * item.quantity;
   }, 0);
-  const discountAmount = subtotal * discount;
-  const total = subtotal - discountAmount;
+  const computedDiscount = appliedCoupon ? discountAmount : subtotal * discount;
+  const total = Math.max(0, subtotal - computedDiscount);
 
-  const applyCoupon = (e) => {
+  const applyCoupon = async (e) => {
     e.preventDefault();
-    if (couponCode.toUpperCase() === 'BCA2026') {
-      setDiscount(0.10);
-      toast.success('10% discount applied!');
-    } else {
+    try {
+      const { data } = await api.post('/coupons/apply', { code: couponCode, subtotal });
+      const result = data.data;
+      setAppliedCoupon(result.code);
+      setDiscount(result.discount / 100);
+      setDiscountAmount(result.discountAmount);
+      toast.success(`${result.discount}% coupon applied`);
+    } catch (error) {
+      setAppliedCoupon(null);
       setDiscount(0);
-      toast.error('Invalid promo code');
+      setDiscountAmount(0);
+      toast.error(error.response?.data?.message || 'Invalid coupon');
     }
   };
 
@@ -67,7 +75,7 @@ const Checkout = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/orders', { shippingAddress: address });
+      await api.post('/orders', { shippingAddress: address, couponCode: appliedCoupon || '' });
       await fetchCart();
       toast.success('Order placed successfully!');
       navigate('/my-orders', { replace: true });
@@ -124,7 +132,7 @@ const Checkout = () => {
           {discount > 0 && (
             <div className="flex justify-between mb-2 text-sm text-secondary font-mono">
               <span>Discount</span>
-              <span>-${discountAmount.toFixed(2)}</span>
+              <span>-${computedDiscount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between mb-4 text-sm text-textMuted pb-4 border-b border-border font-mono">
@@ -141,7 +149,7 @@ const Checkout = () => {
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
-                placeholder="BCA2026"
+                placeholder="Enter your wallet coupon"
                 className="input-field py-2 flex-1 min-w-0 text-sm"
                 value={couponCode}
                 onChange={e => setCouponCode(e.target.value)}
@@ -150,6 +158,9 @@ const Checkout = () => {
                 Apply
               </button>
             </div>
+            {appliedCoupon && (
+              <p className="text-xs text-secondary mt-2">Applied: {appliedCoupon}</p>
+            )}
           </div>
 
           <button

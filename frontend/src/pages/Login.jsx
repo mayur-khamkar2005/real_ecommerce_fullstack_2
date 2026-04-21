@@ -2,7 +2,6 @@ import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -11,7 +10,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
-  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -40,7 +38,7 @@ const Login = () => {
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Sign in to your account</p>
         </div>
 
-        <div className="p-8 shadow-lg" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', borderWidth: '1px' }}>
+        <div className="card p-8" style={{ backgroundColor: 'var(--surface)' }}>
           <h2 className="text-xl font-black mb-6" style={{ color: 'var(--text-dark)' }}>Welcome back</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -100,11 +98,11 @@ const Login = () => {
           </div>
 
           {/* Quick credentials hint for demo */}
-          <div className="mt-4 p-3 text-xs" style={{ backgroundColor: theme === 'dark' ? 'rgba(59,130,246,0.1)' : '#eff6ff', borderColor: theme === 'dark' ? 'rgba(59,130,246,0.3)' : '#bfdbfe', borderWidth: '1px', borderStyle: 'solid' }}>
-            <strong style={{ color: theme === 'dark' ? '#93c5fd' : '#1d4ed8' }}>Demo Admin:</strong>
+          <div className="mt-4 p-3 text-xs" style={{ backgroundColor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', borderWidth: '1px', borderStyle: 'solid' }}>
+            <strong style={{ color: '#93c5fd' }}>Demo Admin:</strong>
             <span style={{ color: 'var(--text-main)' }}> admin@ecommerce.com / admin123</span>
             <br />
-            <strong style={{ color: theme === 'dark' ? '#93c5fd' : '#1d4ed8' }}>Demo User:</strong>
+            <strong style={{ color: '#93c5fd' }}>Demo User:</strong>
             <span style={{ color: 'var(--text-main)' }}> user@ecommerce.com / user123</span>
           </div>
         </div>

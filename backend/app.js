@@ -12,6 +12,8 @@ const cartRoutes = require('./routes/cart.routes');
 const orderRoutes = require('./routes/order.routes');
 const wishlistRoutes = require('./routes/wishlist.routes');
 const suggestionRoutes = require('./routes/suggestion.routes');
+const gameRoutes = require('./routes/game.routes');
+const couponRoutes = require('./routes/coupon.routes');
 
 const app = express();
 
@@ -47,6 +49,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/games', gameRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // ── 404 fallback ──────────────────────────────────
 app.all('*', (req, res, next) => {
