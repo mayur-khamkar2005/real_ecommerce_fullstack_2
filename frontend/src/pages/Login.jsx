@@ -33,7 +33,7 @@ const Login = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-2xl font-black" style={{ color: 'var(--text-main)' }}>
             <ShoppingBag className="shrink-0" size={32} style={{ color: 'var(--secondary)' }} />
-            Shop<span style={{ color: 'var(--secondary)' }}>Brand</span>
+            M<span style={{ color: 'var(--secondary)' }}>Store</span>
           </Link>
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>Sign in to your account</p>
         </div>
@@ -95,15 +95,6 @@ const Login = () => {
                 Create one free
               </Link>
             </p>
-          </div>
-
-          {/* Quick credentials hint for demo */}
-          <div className="mt-4 p-3 text-xs" style={{ backgroundColor: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)', borderWidth: '1px', borderStyle: 'solid' }}>
-            <strong style={{ color: '#93c5fd' }}>Demo Admin:</strong>
-            <span style={{ color: 'var(--text-main)' }}> admin@ecommerce.com / admin123</span>
-            <br />
-            <strong style={{ color: '#93c5fd' }}>Demo User:</strong>
-            <span style={{ color: 'var(--text-main)' }}> user@ecommerce.com / user123</span>
           </div>
         </div>
       </div>
