@@ -29,8 +29,8 @@ export const LAZY_PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///
 export function getImageUrl(imagePath) {
   if (!imagePath) return PLACEHOLDER_IMG;
 
-  // Already a full external URL — use as-is (picsum, placehold.co, CDN, etc.)
-  if (/^https?:\/\//i.test(imagePath)) {
+  // Already a full external URL — use as-is (picsum, placehold.co, CDN, data: URLs, etc.)
+  if (/^https?:\/\//i.test(imagePath) || imagePath.startsWith('data:')) {
     return imagePath;
   }
 

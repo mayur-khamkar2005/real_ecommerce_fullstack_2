@@ -2,14 +2,14 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { Star } from 'lucide-react';
-import { PLACEHOLDER_IMG } from '../utils/imageUrl';
+import { getImageUrl, PLACEHOLDER_IMG } from '../utils/imageUrl';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useContext(CartContext);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // ✅ IMPORTANT FIX (no processing)
-  const imageUrl = product?.image;
+  const imageUrl = getImageUrl(product?.image);
 
   return (
     <div
