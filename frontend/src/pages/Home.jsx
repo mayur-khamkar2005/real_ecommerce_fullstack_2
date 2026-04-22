@@ -42,37 +42,56 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="bg-background">
-      {/* ── Hero Section ── */}
-      <section className="bg-gradient-to-br from-primary via-primaryDark to-primary text-white">
-        <div className="max-w-[1400px] mx-auto px-4 py-20 md:py-28 flex flex-col md:flex-row items-center gap-10">
-          {/* Left Text */}
-          <div className="flex-1">
-            <span className="inline-block bg-secondary/20 text-secondary text-xs font-bold uppercase tracking-widest px-3 py-1.5 border border-white/15 mb-5">
-              🔥 New Season Deals
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black leading-tight mb-5 text-white">
-              Discover
-              <span className="text-secondary"> Premium </span>
-              Products
-            </h1>
-            <p className="text-white/75 text-lg mb-8 max-w-lg leading-relaxed">
-              From the latest electronics to everyday essentials — shop thousands of products at unbeatable prices, delivered to your doorstep.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                to="/store"
-                className="btn-primary px-8 py-3.5 text-base flex items-center gap-2 group"
-              >
-                Shop Now <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                to="/store?category=Electronics"
-                className="border border-white/25 text-white px-8 py-3.5 text-base hover:bg-white/10 transition-colors font-medium"
-              >
-                Browse Electronics
-              </Link>
-            </div>
+<div className="bg-background">
+  {/* ── Hero Section ── */}
+  <section className="relative text-white overflow-hidden">
+
+    {/* 🔥 Background Image */}
+    <div className="absolute inset-0 z-0">
+      <img
+        src="https://images.unsplash.com/photo-1519389950473-47ba0277781c"
+        alt="hero"
+        className="w-full h-full object-cover"
+      />
+    </div>
+
+    {/* 🔥 Overlay */}
+    <div className="absolute inset-0 z-10 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
+
+    {/* 🔥 ORIGINAL CONTENT (same as tera code) */}
+    <div className="relative z-20 max-w-[1400px] mx-auto px-4 py-20 md:py-28 flex flex-col md:flex-row items-center gap-10">
+      
+      {/* Left Text */}
+      <div className="flex-1">
+        <span className="inline-block bg-secondary/20 text-secondary text-xs font-bold uppercase tracking-widest px-3 py-1.5 border border-white/15 mb-5">
+          🔥 New Season Deals
+        </span>
+
+        <h1 className="text-4xl md:text-6xl font-black leading-tight mb-5 text-white">
+          Discover
+          <span className="text-secondary"> Premium </span>
+          Products
+        </h1>
+
+        <p className="text-white/75 text-lg mb-8 max-w-lg leading-relaxed">
+          From the latest electronics to everyday essentials — shop thousands of products at unbeatable prices, delivered to your doorstep.
+        </p>
+
+        <div className="flex flex-wrap gap-4">
+          <Link
+            to="/store"
+            className="btn-primary px-8 py-3.5 text-base flex items-center gap-2 group"
+          >
+            Shop Now <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+
+          <Link
+            to="/store?category=Electronics"
+            className="border border-white/25 text-white px-8 py-3.5 text-base hover:bg-white/10 transition-colors font-medium"
+          >
+            Browse Electronics
+          </Link>
+        </div>
 
             {/* Stats */}
             <div className="flex gap-8 mt-10 border-t border-white/20 pt-8">
@@ -119,30 +138,67 @@ const Home = () => {
       </div>
 
       {/* ── Categories ── */}
-      <section className="max-w-[1400px] mx-auto px-4 py-14">
-        <div className="flex items-end justify-between mb-8">
-          <div>
-            <p className="text-xs text-secondary font-bold uppercase tracking-widest mb-1">Explore</p>
-            <h2 className="text-2xl md:text-3xl font-black text-textDark">Shop by Category</h2>
-          </div>
-          <Link to="/store" className="text-sm text-secondary hover:text-secondaryHover font-semibold flex items-center gap-1">
-            All Categories <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {categories.map((cat) => (
-            <button
-              key={cat.name}
-              onClick={() => navigate(`/store?category=${encodeURIComponent(cat.name)}`)}
-              className="group bg-surface border border-border p-5 text-left hover:border-secondary hover:shadow-lg transition-all duration-300"
-            >
-              <div className="text-3xl mb-3">{cat.emoji}</div>
-              <p className="font-bold text-textDark text-sm group-hover:text-secondary transition-colors">{cat.name}</p>
-              <p className="text-xs text-textMuted mt-1">{cat.desc}</p>
-            </button>
-          ))}
-        </div>
-      </section>
+<div className="relative">
+
+  {/* 🔥 FULL WIDTH BACKGROUND */}
+  <div
+    className="absolute inset-0"
+    style={{
+      backgroundImage: `
+        linear-gradient(rgba(5,10,25,0.75), rgba(5,10,25,0.9)),
+        url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1600&auto=format&fit=crop')
+      `,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      opacity: 0.4   // 👈 IMPORTANT (warna dikhega hi nahi)
+    }}
+  />
+
+  {/* 🔥 CONTENT */}
+  <section className="relative z-10 max-w-[1400px] mx-auto px-4 py-14">
+
+    <div className="flex items-end justify-between mb-8">
+      <div>
+        <p className="text-xs text-secondary font-bold uppercase tracking-widest mb-1">
+          Explore
+        </p>
+        <h2 className="text-2xl md:text-3xl font-black text-textDark">
+          Shop by Category
+        </h2>
+      </div>
+
+      <Link
+        to="/store"
+        className="text-sm text-secondary hover:text-secondaryHover font-semibold flex items-center gap-1"
+      >
+        All Categories <ArrowRight size={14} />
+      </Link>
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {categories.map((cat) => (
+        <button
+          key={cat.name}
+          onClick={() =>
+            navigate(`/store?category=${encodeURIComponent(cat.name)}`)
+          }
+          className="group bg-surface border border-border p-5 text-left hover:border-secondary hover:shadow-lg transition-all duration-300"
+        >
+          <div className="text-3xl mb-3">{cat.emoji}</div>
+
+          <p className="font-bold text-textDark text-sm group-hover:text-secondary transition-colors">
+            {cat.name}
+          </p>
+
+          <p className="text-xs text-textMuted mt-1">
+            {cat.desc}
+          </p>
+        </button>
+      ))}
+    </div>
+
+  </section>
+</div>
 
       {/* ── Featured Products ── */}
       <section className="max-w-[1400px] mx-auto px-4 pb-16">

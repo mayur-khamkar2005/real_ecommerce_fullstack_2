@@ -4,7 +4,7 @@ import { ShoppingCart, Search, LogOut, User, Heart, Menu, X, ShoppingBag, Gift }
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 
-const CATEGORIES = ['Electronics', 'Fashion', 'Gaming', 'Home & Kitchen', 'Books', 'Sports', 'Beauty', 'Gadgets'];
+const CATEGORIES = ['Electronics', 'Fashion', 'Gaming', 'Home & Kitchen', 'Books', 'Sports', 'Beauty', 'Accessories', 'Footwear', 'Gadgets'];
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);

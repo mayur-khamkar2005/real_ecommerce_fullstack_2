@@ -9,9 +9,10 @@ const AdminProducts = () => {
   
   const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'Electronics', stock: '' });
   const [image, setImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [editFormData, setEditFormData] = useState({ name: '', description: '', price: '', category: '', stock: '' });
+  const [editFormData, setEditFormData] = useState({ name: '', description: '', price: '', category: '', stock: '', image: '' });
   const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchProducts = async () => {
@@ -25,8 +26,8 @@ const AdminProducts = () => {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!image) return toast.error('Please select an image');
-    
+    if (!image && !imageUrl) return toast.error('Please provide an image file or URL');
+
     setIsSubmitting(true);
     const data = new FormData();
     data.append('name', formData.name);
@@ -34,13 +35,18 @@ const AdminProducts = () => {
     data.append('price', formData.price);
     data.append('category', formData.category);
     data.append('stock', formData.stock);
-    data.append('image', image);
+    if (image) {
+      data.append('image', image);
+    } else if (imageUrl) {
+      data.append('image', imageUrl);
+    }
 
     try {
       await api.post('/products', data);
       toast.success('Product created');
       setFormData({ name: '', description: '', price: '', category: 'Electronics', stock: '' });
       setImage(null);
+      setImageUrl('');
       e.target.reset();
       fetchProducts();
     } catch (error) {
@@ -66,7 +72,8 @@ const AdminProducts = () => {
       description: product.description,
       price: product.price,
       category: product.category,
-      stock: product.stock
+      stock: product.stock,
+      image: product.image || ''
     });
   };
 
@@ -80,6 +87,9 @@ const AdminProducts = () => {
       data.append('price', editFormData.price);
       data.append('category', editFormData.category);
       data.append('stock', editFormData.stock);
+      if (editFormData.image) {
+        data.append('image', editFormData.image);
+      }
       await api.put(`/products/${editingProduct._id}`, data);
       toast.success('Product updated');
       setEditingProduct(null);
@@ -121,11 +131,26 @@ const AdminProducts = () => {
                 <option>Electronics</option>
                 <option>Fashion</option>
                 <option>Gaming</option>
+                <option>Home &amp; Kitchen</option>
+                <option>Books</option>
+                <option>Sports</option>
+                <option>Beauty</option>
+                <option>Accessories</option>
+                <option>Footwear</option>
+                <option>Gadgets</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold mb-1">Image</label>
-              <input required type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} className="w-full text-sm" />
+              <label className="block text-sm font-bold mb-1">Image URL</label>
+              <input
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                className="input-field mb-2"
+              />
+              <label className="block text-xs" style={{ color: 'var(--text-muted)' }}>or upload a file</label>
+              <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} className="w-full text-sm" />
             </div>
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full mt-4">
               {isSubmitting ? 'Adding...' : 'Add Product'}
@@ -202,6 +227,17 @@ const AdminProducts = () => {
               <div>
                 <label className="block text-sm font-bold mb-1">Category</label>
                 <input required type="text" className="input-field" value={editFormData.category} onChange={e => setEditFormData({...editFormData, category: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Image URL</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  className="input-field mb-2"
+                  value={editFormData.image || ''}
+                  onChange={e => setEditFormData({...editFormData, image: e.target.value})}
+                />
+                <label className="block text-xs" style={{ color: 'var(--text-muted)' }}>Leave empty to keep current image</label>
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="button" onClick={() => setEditingProduct(null)} className="btn-secondary flex-1">Cancel</button>
