@@ -3,6 +3,7 @@ const Review = require('../models/review.model');
 const AppError = require('../utils/AppError');
 const fs = require('fs');
 const path = require('path');
+const { downloadImage } = require('../utils/imageDownloader');
 
 exports.getAllProducts = async (query) => {
   const { keyword, category, page, limit, sort } = query;
@@ -60,14 +61,25 @@ exports.getProductById = async (id) => {
 };
 
 exports.createProduct = async (productData, file) => {
-  // Use external URL if provided in body, else use the uploaded file path
-  let imagePath = productData.image || null;
+  let imagePath = null;
 
   if (file) {
-    // Actual file upload — serve from /uploads/
+    // File upload takes priority
     imagePath = `/uploads/${file.filename}`;
-  } else if (!imagePath) {
-    // Fallback: use picsum seeded by product name
+  } else if (productData.image) {
+    // External URL — download and serve locally to avoid broken-image issues
+    try {
+      imagePath = await downloadImage(productData.image);
+    } catch (err) {
+      console.warn(`Failed to download image from "${productData.image}":`, err.message);
+    }
+    // If download failed, fall back to picsum
+    if (!imagePath) {
+      const seed = (productData.name || 'product').toLowerCase().replace(/\s+/g, '-');
+      imagePath = `https://picsum.photos/seed/${encodeURIComponent(seed)}/600/600`;
+    }
+  } else {
+    // No image provided — use picsum
     const seed = (productData.name || 'product').toLowerCase().replace(/\s+/g, '-');
     imagePath = `https://picsum.photos/seed/${encodeURIComponent(seed)}/600/600`;
   }
@@ -87,22 +99,38 @@ exports.updateProduct = async (id, updateData, file) => {
   }
 
   if (file) {
-    // Delete old local upload if it was a /uploads/ path
+    // New file uploaded — delete old local file if it was from /uploads/
     if (product.image && product.image.startsWith('/uploads/')) {
       const oldImagePath = path.join(__dirname, '..', product.image);
       if (fs.existsSync(oldImagePath)) {
         fs.unlinkSync(oldImagePath);
       }
     }
-    // Use new uploaded file
     updateData.image = `/uploads/${file.filename}`;
   } else if (updateData.image) {
-    // Explicit URL provided in body (external), use as-is
-  } else if (updateData.name && !product.image.startsWith('http')) {
-    // Name changed but no new image and old image is slug-based — re-slug
-    const seed = updateData.name.toLowerCase().replace(/\s+/g, '-');
-    updateData.image = `https://picsum.photos/seed/${encodeURIComponent(seed)}/600/600`;
+    // URL changed — download new image if it's an external URL
+    const isLocalPath = updateData.image.startsWith('/uploads/') || updateData.image.startsWith('/images/');
+    if (!isLocalPath && /^https?:\/\//i.test(updateData.image)) {
+      try {
+        const newLocalPath = await downloadImage(updateData.image);
+        if (newLocalPath) {
+          // Delete old local file
+          if (product.image && product.image.startsWith('/uploads/')) {
+            const oldImagePath = path.join(__dirname, '..', product.image);
+            if (fs.existsSync(oldImagePath)) {
+              fs.unlinkSync(oldImagePath);
+            }
+          }
+          updateData.image = newLocalPath;
+        }
+        // If download failed, keep the URL as-is (existing behavior)
+      } catch (err) {
+        console.warn(`Failed to download image from "${updateData.image}":`, err.message);
+        // Keep updateData.image — will be used as-is
+      }
+    }
   }
+  // else: no new image provided, product.image is preserved automatically
 
   Object.assign(product, updateData);
   await product.save();
