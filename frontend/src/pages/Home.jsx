@@ -24,7 +24,7 @@ const perks = [
 
 // hero image list addded
 const heroImages = [
-  "https://images.unsplash.com/photo-1519389950473-47ba0277781c", // default (same as tera)
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
   "https://images.openai.com/static-rsc-4/eCBbTfzi2lXFfCGNap_pTNSQcHpLf_GFrlU8SygxCKG1nsHMBsd3_sxSNzad8nCLo0_jKx-4LJHYqki5JVE_iKW9zk2ftm8wzu7wsNAStH6D1j6rNMUqxzBbd7Q5_wEgvTvy__pA77hz5YNj2m6kGdokLWl986ugLPczBYu4JuEvFO2ubSKOurbDyFT2xZBF?purpose=fullsize",
   "https://images.openai.com/static-rsc-4/agsD0o6HaN_2dEtZBg7XhjXM9Y9-Vx4u347TLGC2sm124jBTLvTlE_asmL1lGYCttT0hLpOIKG5iIA6BFxb5mXEWY3GFk0OOk7uiiUmlzT4q7_UzrwbqZ9hcOfRN1UM9AFu5olSwh3MXnPutqF3flVRXGlosEUCn22P9q9faemJHClleLQLCiXUQCzYFZ4X6?purpose=fullsize",
   "https://images.openai.com/static-rsc-4/cvfagV7odloxypZwGA2Zzc-9KMeAXcciTOgs2p4sKGmB_yauhdyHAp_M9cXDJvm4uWlUeM-z1HSLbe0_Jime6oebnQGn31jtLnRuWrtre4_uiyUxYqB3tn19x9UkObdSa0C7cLgJVJycuPm974iOsSKRdBdyy_RcAzEESaagg14YS70S9pgtRgfIkCgJTR0t?purpose=fullsize"
