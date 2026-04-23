@@ -21,7 +21,7 @@ const app = express();
 // Allow any origin in dev; lock to CLIENT_URL in production
 const allowedOrigin = process.env.CLIENT_URL || true; // true = reflect request origin
 app.use(cors({
-  origin: allowedOrigin,
+  origin: process.env.CLIENT_URL,
   credentials: true,
 }));
 
