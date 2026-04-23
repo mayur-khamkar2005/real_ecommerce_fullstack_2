@@ -4,13 +4,18 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
+// 🔓 Public Routes
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 
-// Protected route
+// 🔐 Protected Routes
 router.get('/me', verifyToken, authController.getMe);
-router.put('/profile', verifyToken, authController.updateProfile);
-router.put('/password', verifyToken, authController.updatePassword);
+
+router.route('/profile')
+  .put(verifyToken, authController.updateProfile);
+
+router.route('/password')
+  .put(verifyToken, authController.updatePassword);
 
 module.exports = router;

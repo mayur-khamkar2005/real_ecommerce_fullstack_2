@@ -13,12 +13,11 @@ const createSendToken = (user, statusCode, res, message) => {
   const token = signToken(user._id);
 
   const cookieOptions = {
-    expires: new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-    ),
-    httpOnly: true, // Prevents XSS attacks
-    secure: process.env.NODE_ENV === 'production', // Send only on HTTPS in prod
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: true, // production me always true
+    sameSite: "None", // ⚠️ capital N (IMPORTANT)
+    path: "/", // ⚠️ IMPORTANT
   };
 
   res.cookie('jwt', token, cookieOptions);
@@ -33,7 +32,6 @@ const createSendToken = (user, statusCode, res, message) => {
 };
 
 exports.register = catchAsync(async (req, res, next) => {
-  // Controller simply delegates to service and handles the response
   const newUser = await authService.registerUser(req.body);
   createSendToken(newUser, 201, res, 'Registration successful');
 });
@@ -46,25 +44,25 @@ exports.login = catchAsync(async (req, res, next) => {
 
 exports.logout = catchAsync(async (req, res, next) => {
   res.cookie('jwt', 'loggedout', {
-    expires: new Date(Date.now() + 10 * 1000), // expires in 10 seconds
+    expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: true,
+    sameSite: "None",
+    path: "/",
   });
-  
-  res.status(200).json({ 
-    success: true, 
-    message: 'Logged out successfully' 
+
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully',
   });
 });
 
 exports.getMe = catchAsync(async (req, res, next) => {
-  // req.user is set by the verifyToken middleware
   res.status(200).json({
     success: true,
     data: {
-      user: req.user
-    }
+      user: req.user,
+    },
   });
 });
 
@@ -75,9 +73,15 @@ exports.updateProfile = catchAsync(async (req, res, next) => {
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
   const { oldPassword, newPassword } = req.body;
+
   if (!oldPassword || !newPassword) {
     return next(new AppError('Please provide old and new password', 400));
   }
+
   await authService.updatePassword(req.user.id, oldPassword, newPassword);
-  res.status(200).json({ success: true, message: 'Password updated successfully' });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password updated successfully',
+  });
 });
